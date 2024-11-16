@@ -1,82 +1,65 @@
-let carrito = []; 
+document.addEventListener("DOMContentLoaded", () => {
+  const cartItems = document.getElementById("cart-items");
+  const cartCount = document.getElementById("cart-count");
+  const totalPriceElement = document.getElementById("total-price");
+  const checkoutBtn = document.getElementById("checkout-btn");
 
-// Función para agregar productos al carrito
-function agregarAlCarrito(nombre, precio) {
-  // Comprobar si el producto ya existe en el carrito
-  const productoExistente = carrito.find(producto => producto.nombre === nombre);
+  let itemCount = 0;
+  let totalPrice = 0;
 
-  if (productoExistente) {
-    // Si el producto ya existe, aumentamos su cantidad
-    productoExistente.cantidad++;
-  } else {
-    // Si el producto no existe, lo agregamos al carrito
-    carrito.push({ nombre, precio, cantidad: 1 });
-  }
+  document.querySelectorAll(".add-to-cart").forEach((button) => {
+    button.addEventListener("click", () => {
+      const productName = button.getAttribute("data-name");
+      const productPrice = parseInt(button.getAttribute("data-price"));
+      const productImg = button.getAttribute("data-img");
 
-  // Actualizamos el carrito
-  actualizarCarrito();
-}
+      const existingRow = Array.from(cartItems.rows).find(
+        (row) => row.cells[1].innerText === productName
+      );
 
-// Función para actualizar el contenido del carrito
-function actualizarCarrito() {
-  const carritoItems = document.getElementById('carrito-items');
-  // Limpiamos el contenido del carrito
-  carritoItems.innerHTML = '';
-
-  let total = 0;
-
-  // Si el carrito está vacío, mostramos un mensaje
-  if (carrito.length === 0) {
-    carritoItems.innerHTML = '<p>Aún no has agregado productos al carrito.</p>';
-  } else {
-    // Si el carrito tiene productos, los mostramos
-    carrito.forEach((producto, index) => {
-        total += producto.precio * producto.cantidad;
-        carritoItems.innerHTML += `
-            <div class="cart-item d-flex justify-content-between align-items-center">
-                <span>${producto.nombre}</span>
-                <span>$${producto.precio}</span>
-                <span>
-                <button class="btn btn-secondary btn-sm" onclick="modificarCantidad(${index}, -1)">-</button>
-                ${producto.cantidad}
-                <button class="btn btn-secondary btn-sm" onclick="modificarCantidad(${index}, 1)">+</button>
-                </span>
-                <button class="btn btn-danger btn-sm" onclick="eliminarProducto(${index})">Eliminar</button>
-            </div>
-            `;
-    });
-  }
-  
-  // Mostramos el total
-  document.getElementById('total').textContent = total.toFixed(2);
-}
-
-// Función para modificar la cantidad de un producto
-function modificarCantidad(index, cantidad) {
-  const producto = carrito[index];
-
-  // Si la cantidad es negativa, solo decrementamos si es mayor que 1
-  if (cantidad < 0 && producto.cantidad > 1) {
-    producto.cantidad += cantidad;
-  } else if (cantidad > 0) {
-    producto.cantidad += cantidad;
-  }
-
-  actualizarCarrito();
-}
-
-// Función para eliminar un producto del carrito
-function eliminarProducto(index) {
-  carrito.splice(index, 1); // Eliminamos el producto del carrito
-  actualizarCarrito();
-}
-
-// Función para alternar el menú de navegación en dispositivos móviles
-$(document).ready(function() {
-    // Detectamos el clic en el botón hamburguesa
-    $('.navbar-toggler').click(function() {
-      // Alternamos la visibilidad del menú
-      $('#navbarSupportedContent').toggleClass('collapse');
+      if (existingRow) {
+        const quantityCell = existingRow.cells[3];
+        quantityCell.innerText = parseInt(quantityCell.innerText) + 1;
+      } else {
+        const newRow = cartItems.insertRow();
+        newRow.innerHTML = `
+          <td><img src="${productImg}" width="50"></td>
+          <td>${productName}</td>
+          <td>$${productPrice.toLocaleString()}</td>
+          <td>1</td>
+          <td><button class="btn btn-danger btn-sm remove-item">Eliminar</button></td>
+        `;
+        newRow.querySelector(".remove-item").addEventListener("click", () => {
+          const quantity = parseInt(newRow.cells[3].innerText);
+          const price = productPrice * quantity;
+          newRow.remove();
+          updateCartCount(-quantity);
+          updateTotalPrice(-price);
+        });
+      }
+      updateCartCount(1);
+      updateTotalPrice(productPrice);
     });
   });
 
+  function updateCartCount(change) {
+    itemCount += change;
+    cartCount.innerText = itemCount;
+  }
+
+  function updateTotalPrice(amount) {
+    totalPrice += amount;
+    totalPriceElement.innerText = totalPrice.toLocaleString();
+  }
+
+  checkoutBtn.addEventListener("click", () => {
+    if (itemCount > 0) {
+      alert(`Compra finalizada por un total de $${totalPrice.toLocaleString()}`);
+      cartItems.innerHTML = "";
+      updateCartCount(-itemCount);
+      updateTotalPrice(-totalPrice);
+    } else {
+      alert("El carrito está vacío.");
+    }
+  });
+});
